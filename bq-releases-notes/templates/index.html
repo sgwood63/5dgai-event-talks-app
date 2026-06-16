@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Track Google Cloud BigQuery release notes, filter updates, and easily share them on Twitter with a custom tweet composer.">
+    <title>BigQuery Release Pulse</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Background elements for visual depth -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="logo-container">
+                    <svg class="logo-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#logoGrad1)" />
+                        <path d="M2 17L12 22L22 17M2 12L12 17L22 12" stroke="url(#logoGrad2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <defs>
+                            <linearGradient id="logoGrad1" x1="2" y1="2" x2="22" y2="12" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#3b82f6" />
+                                <stop offset="1" stop-color="#8b5cf6" />
+                            </linearGradient>
+                            <linearGradient id="logoGrad2" x1="2" y1="12" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#60a5fa" />
+                                <stop offset="1" stop-color="#a78bfa" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="app-title">BigQuery Release Pulse</h1>
+                    <p class="app-subtitle">Track, filter, and share Google Cloud BigQuery updates</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Feed Up-to-date</span>
+                </div>
+                <button id="refreshBtn" class="btn btn-primary btn-refresh" aria-label="Refresh release notes">
+                    <svg class="icon icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                    </svg>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Control Center (Filters & Search) -->
+        <section class="control-panel glass">
+            <div class="search-box">
+                <svg class="icon icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="searchInput" placeholder="Search release notes by keywords..." aria-label="Search release notes">
+            </div>
+
+            <div class="filter-container">
+                <span class="filter-label">Categories:</span>
+                <div class="filter-tags" id="categoryFilters" role="group" aria-label="Filter updates by type">
+                    <button class="filter-tag active" data-category="all">All</button>
+                    <!-- Categories will be dynamically generated here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Content Area -->
+        <main class="feed-section">
+            <div id="loadingState" class="feed-state">
+                <div class="spinner-container">
+                    <div class="double-bounce1"></div>
+                    <div class="double-bounce2"></div>
+                </div>
+                <p>Fetching BigQuery release notes...</p>
+            </div>
+
+            <div id="errorState" class="feed-state hidden">
+                <div class="error-illustration">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                </div>
+                <h3>Failed to fetch release notes</h3>
+                <p id="errorMessage">There was an issue contacting the update feed. Please try again.</p>
+                <button id="retryBtn" class="btn btn-secondary">Retry Fetch</button>
+            </div>
+
+            <div id="emptyState" class="feed-state hidden">
+                <h3>No updates found</h3>
+                <p>No release notes match your current search and filter criteria.</p>
+                <button id="clearFiltersBtn" class="btn btn-secondary">Reset Filters</button>
+            </div>
+
+            <div id="feedTimeline" class="feed-timeline hidden">
+                <!-- Timeline items will be rendered dynamically -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Floating Actions Panel (appears when updates are selected) -->
+    <div id="floatingActionBar" class="floating-action-bar glass hidden">
+        <div class="selection-info">
+            <span class="selection-count" id="selectionCount">0 selected</span>
+            <span class="selection-details">Select updates to tweet them together or copy content.</span>
+        </div>
+        <div class="action-buttons">
+            <button id="multiTweetBtn" class="btn btn-primary btn-tweet-action">
+                <svg class="icon icon-twitter" viewBox="0 0 24 24" fill="currentColor">
+                    <!-- Standard X/Twitter SVG Icon -->
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                <span>Tweet Selected</span>
+            </button>
+            <button id="multiCopyBtn" class="btn btn-secondary">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                <span>Copy Text</span>
+            </button>
+            <button id="clearSelectionBtn" class="btn btn-text">Clear</button>
+        </div>
+    </div>
+
+    <!-- Tweet Composer Dialog -->
+    <dialog id="tweetComposer" closedby="any" aria-labelledby="composerTitle" class="glass modal-dialog">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="composerTitle">Compose Tweet</h2>
+                <button id="closeComposerBtn" class="btn-close" aria-label="Close dialog">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </header>
+            
+            <main class="modal-body">
+                <div class="composer-container">
+                    <textarea id="tweetTextarea" placeholder="What's happening?" aria-label="Tweet text" rows="6"></textarea>
+                    
+                    <div class="composer-footer">
+                        <div class="char-count-wrapper">
+                            <svg class="progress-ring" width="30" height="30">
+                                <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="2" fill="transparent" r="10" cx="15" cy="15"/>
+                                <circle id="charProgressCircle" class="progress-ring__circle" stroke="#3b82f6" stroke-width="2.5" fill="transparent" r="10" cx="15" cy="15"/>
+                            </svg>
+                            <span id="charCount">280</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tweet-preview-card glass">
+                    <div class="preview-header">
+                        <div class="preview-avatar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <div class="preview-user">
+                            <span class="preview-name">You</span>
+                            <span class="preview-handle">@username</span>
+                        </div>
+                        <svg class="preview-x-logo" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                    </div>
+                    <div class="preview-text" id="tweetPreviewText"></div>
+                </div>
+            </main>
+            
+            <footer class="modal-footer">
+                <button id="cancelTweetBtn" class="btn btn-secondary">Cancel</button>
+                <button id="postTweetBtn" class="btn btn-primary btn-tweet-action">
+                    <svg class="icon icon-twitter" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    <span>Tweet Now</span>
+                </button>
+            </footer>
+        </div>
+    </dialog>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "google-news-cli",
+  "version": "1.0.0",
+  "description": "A premium CLI tool to search and read Google News",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "google-news": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "open": "^10.1.0",
+    "picocolors": "^1.1.1",
+    "prompts": "^2.4.2",
+    "rss-parser": "^3.13.0"
+  }
+}
